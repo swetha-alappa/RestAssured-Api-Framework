@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+
+package com.protos;
+message CreateUserRequest{
+string name = 1;
+string job = 2;
+}
+
+message CreateUserResponse{
+string name = 1;
+string job = 2;
+string id = 3;
+string createdAt = 4;
+}

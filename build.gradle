@@ -1,0 +1,127 @@
+buildscript {
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+    dependencies {
+        classpath "com.google.protobuf:protobuf-gradle-plugin:0.9.4"
+    }
+}
+
+apply plugin: 'java'
+apply plugin: "com.google.protobuf"
+
+group = 'org.example'
+version = '1.0-SNAPSHOT'
+
+// fix for Execution failed for task ':processResources'. > Entry filter_message.proto is a duplicate but no duplicate handling strategy has been set.
+// while generating protos .class file
+allprojects {
+    apply plugin: 'java'
+
+    tasks.withType(Copy).all {
+        duplicatesStrategy 'exclude'
+    }
+}
+
+
+dependencies {
+
+    testImplementation platform('org.junit:junit-bom:5.9.1')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+   // testImplementation 'org.testng:testng:6.14.3'
+    implementation group: 'com.googlecode.json-simple', name: 'json-simple', version: '1.1.1'
+
+    // Use rest assured
+    implementation group: 'io.rest-assured', name: 'rest-assured', version: '5.3.1'
+    implementation group: 'org.apache.poi', name: 'poi', version: '5.0.0'
+
+    implementation group: 'com.google.protobuf', name: 'protobuf-java', version: '3.25.2'
+    implementation 'io.grpc:grpc-protobuf:1.32.1'
+    implementation 'io.grpc:grpc-stub:1.32.1'
+    implementation 'io.grpc:grpc-netty:1.32.1'
+
+    implementation group: 'com.google.protobuf', name: 'protobuf-java-util', version: '3.25.2'
+
+    implementation group: 'org.testng', name: 'testng', version: '6.14.3'
+
+    implementation group: 'com.relevantcodes', name: 'extentreports', version: '2.41.2'
+}
+
+
+
+repositories {
+    mavenCentral()
+}
+
+task myTask {
+    def myFileTree = fileTree(dir: 'src/main/resources') {
+        include '**/*.txt'
+    }
+
+    // Filter out empty directories
+    myFileTree = myFileTree.matching { FileTreeElement element ->
+        !element.directory || element.file
+    }
+
+    doLast {
+        // Print all files in the filtered file tree
+        myFileTree.each { file ->
+            println "File: ${file}"
+        }
+    }
+}
+
+
+sourceSets {
+    main {
+        proto {
+            // In addition to the default "src/main/proto"
+            srcDir "proto/api"
+            // srcDir "src/main/grpc"
+        }
+        java {
+            // include self written and generated code
+            srcDirs 'src/main/java','src/test/java','generated-sources/main/java', 'proto/pojo'
+        }
+        resources {
+            srcDirs 'src/main/resources', 'src/test/resources'
+        }
+    }
+
+    test {
+        java {
+            srcDirs 'src/test/java','src/main/java','generated-sources/main/java', 'proto/pojo'
+        }
+        resources {
+            srcDirs 'src/main/resources', 'src/test/resources'
+        }
+    }
+}
+
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:3.21.0"
+    }
+    plugins {
+        grpc {
+            artifact = "io.grpc:protoc-gen-grpc-java:1.61.0"
+        }
+    }
+    generateProtoTasks {
+        all()*.plugins {
+            grpc {}
+        }
+    }
+    //generateProtoTasks.generatedFilesBaseDir = "generated-sources"
+}
+test {
+    useTestNG()
+            {
+                includeGroups 'smoke'
+            }
+}
+
+
+
